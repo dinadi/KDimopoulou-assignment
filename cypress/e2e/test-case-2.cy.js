@@ -1,6 +1,6 @@
-describe('switch to Booking.com', () => {
+describe('Search Mask, switch on Booking.com', () => {
 
-    it('should open a new tab with the search execution and at the initial tab open Booking.com and perform a search', () => {
+    it('should open a new tab with the search execution while at the initial tab open Booking.com and perform a search', () => {
         // open the Ferryhopper website
         cy.visit('https://www.ferryhopper.com/');
 
