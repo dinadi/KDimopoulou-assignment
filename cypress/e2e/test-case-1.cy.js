@@ -1,5 +1,5 @@
 describe('Booking Flow', () => {
-    it('should store the personal and contact details of the passenger and the price is the same throughout the booking flow ', () => {
+    it('should store the personal and contact details of the passenger and the price should be the same throughout the booking flow ', () => {
         // open the Ferryhopper website
         cy.visit('https://www.ferryhopper.com/');
         cy.get('.CybotCookiebotDialogBodyButton').contains('Allow all').click();
@@ -22,49 +22,67 @@ describe('Booking Flow', () => {
         // select standard seat as accommodation
         cy.get('[data-test="seatsDropdown"]').click();
         cy.get('[data-test="seatsDropdownOptionDesc"]').contains('standard seat').click();
+        cy.intercept('/ferry-providers/pricing').as('getPricing');
         cy.get('[data-test="fhCta"]').contains('Verify').click();
+        cy.wait('@getPricing');
 
-        // continue to the booking step with passenger’s details
-        cy.get('[data-test="seatingCartCta"]').click();
+        cy.get('[data-test="fhCartFooter"]').children().first()
+            .invoke('text')
+            .then((totalPriceTicketsStep) => {
+                // continue to the booking step with passenger’s details
+                cy.get('[data-test="seatingCartCta"]').click();
 
-        // fill-up all the required fields and check the price
-        cy.get('.fh-radio').eq(1).click();
-        cy.get('[data-test="fhInput"]').eq(0).type('Konstantina');
-        cy.get('[data-test="fhInput"]').eq(1).type('Dimopoulou');
-        cy.get('#birthDate-passenger1').type('01/01/1990')
-        cy.get('#nationality-passenger1').type('Gr');
-        cy.get('.fh-dropdown-option-0').contains('Greece').click();
-        cy.get('#passport-passenger1').type('AB1234');
-        cy.get('#reservationEmail').type('konsdim@gmail.com');
-        cy.get('.contact-details__phone-country-code').type('30');
-        cy.get('[data-test="fhDropdownOption"]').contains('Greece').click();
-        cy.get('#reservationPhone').type('12345678');
+                // fill-up all the required fields and check the price
+                cy.get('.fh-radio').eq(1).click();
+                cy.get('[data-test="fhInput"]').eq(0).type('Konstantina');
+                cy.get('[data-test="fhInput"]').eq(1).type('Dimopoulou');
+                cy.get('#birthDate-passenger1').type('01/01/1990')
+                cy.get('#nationality-passenger1').type('Gr');
+                cy.get('.fh-dropdown-option-0').contains('Greece').click();
+                cy.get('#passport-passenger1').type('AB1234');
+                cy.get('#reservationEmail').type('konsdim@gmail.com');
+                cy.get('.contact-details__phone-country-code').type('30');
+                cy.get('[data-test="fhDropdownOption"]').contains('Greece').click();
+                cy.get('#reservationPhone').type('12345678');
 
-        //check the price at this step
-        cy.get('.price').eq(1).should('have.text', ' € 40.00');
+                cy.get('.px12')
+                    .invoke('text')
+                    .then((totalPricePassengersStep) => {
+                        //check the price at this step
+                        expect(totalPricePassengersStep.split('€')[1]).to.eq(totalPriceTicketsStep.split('€')[1]);
 
-        // go to payment page
-        cy.scrollTo('bottom');
-        cy.get('.checkbox').contains('I have read and agree to the ').click();
-        cy.get('[data-test="fhCta"]').contains('Book and pay').click();
+                        // go to payment page
+                        cy.scrollTo('bottom');
+                        cy.get('.checkbox').contains('I have read and agree to the ').click();
+                        cy.get('[data-test="fhCta"]').contains('Book and pay').click();
 
-        // check that the price displayed continues to be the same
-        cy.get('.payment-widget__order-amount').should('have.text', '40.00 €');
+                        // check that the price displayed continues to be the same
+                        cy.get('.payment-widget__order-amount')
+                            .invoke('text')
+                            .then((totalPricePaymentStep) => {
+                                expect(totalPricePaymentStep.split('€')[0].trim()).to.eq(totalPriceTicketsStep.split('€')[1].trim());
 
-        // click to return to the previous step
-        cy.get('.payment-widget__back-button').click();
+                                // click to return to the previous step
+                                cy.get('.payment-widget__back-button').click();
 
-        // check that all the previously filled data are properly shown
-        cy.get('.fh-radio__input').eq(1).should('be.checked')
-        cy.get('#name-passenger1 input').should('have.value', 'KONSTANTINA');
-        cy.get('#last-name-passenger1 input').should('have.value', 'DIMOPOULOU');
-        cy.get('#birthDate-passenger1 input').should('have.value', '01/01/1990')
-        cy.get('#nationality-passenger1').should('have.text', 'Greece');
-        cy.get('#passport-passenger1 input').should('have.value', 'AB1234');
-        cy.get('#reservationEmail input').should('have.value', 'konsdim@gmail.com');
-        cy.get('.contact-details__phone-country-code').should('have.text', '+30');
-        cy.get('#reservationPhone input').should('have.value', '12345678');
-        cy.get('.price').eq(1).should('have.text', ' € 40.00');
+                                // check that all the previously filled data are properly shown
+                                cy.get('.fh-radio__input').eq(1).should('be.checked')
+                                cy.get('#name-passenger1 input').should('have.value', 'KONSTANTINA');
+                                cy.get('#last-name-passenger1 input').should('have.value', 'DIMOPOULOU');
+                                cy.get('#birthDate-passenger1 input').should('have.value', '01/01/1990')
+                                cy.get('#nationality-passenger1').should('have.text', 'Greece');
+                                cy.get('#passport-passenger1 input').should('have.value', 'AB1234');
+                                cy.get('#reservationEmail input').should('have.value', 'konsdim@gmail.com');
+                                cy.get('.contact-details__phone-country-code').should('have.text', '+30');
+                                cy.get('#reservationPhone input').should('have.value', '12345678');
+                                cy.get('.px12')
+                                    .invoke('text')
+                                    .then((totalPricePassengersStep) => {
+                                        expect(totalPricePassengersStep.split('€')[1].trim()).to.eq(totalPricePaymentStep.split('€')[0].trim())
+                                    });
+                            });
+                    });
+            });
     });
 
 });
